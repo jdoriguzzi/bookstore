@@ -1,62 +1,76 @@
-const express = require("express");
-const Book = require("../models/book");
+const express = require("express")
+const Book = require("../models/book")
 
-const router = new express.Router();
+const router = new express.Router()
+
+const { validate } = require("jsonschema")
+const bookSchema = require("../schemas/bookSchema")
+
 
 
 /** GET / => {books: [book, ...]}  */
 
 router.get("/", async function (req, res, next) {
   try {
-    const books = await Book.findAll(req.query);
-    return res.json({ books });
-  } catch (err) {
-    return next(err);
+    const books = await Book.findAll(req.query)
+    return res.json({ books })
+  } catch (e) {
+    return next(e)
   }
-});
+})
 
 /** GET /[id]  => {book: book} */
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const book = await Book.findOne(req.params.id);
-    return res.json({ book });
-  } catch (err) {
-    return next(err);
+    const book = await Book.findOne(req.params.id)
+    return res.json({ book })
+  } catch (e) {
+    return next(e)
   }
-});
+})
 
 /** POST /   bookData => {book: newBook}  */
 
 router.post("/", async function (req, res, next) {
   try {
-    const book = await Book.create(req.body);
-    return res.status(201).json({ book });
-  } catch (err) {
-    return next(err);
+    const validation = validate(req.body, bookSchema)
+    if (!validation.valid) {
+      return next({status: 400,error: validation.errors.map(e => e.stack)})
+    }
+    const book = await Book.create(req.body)
+    return res.status(201).json({book})
   }
-});
+  catch (e) {
+    return next(e)
+  }
+})
 
 /** PUT /[isbn]   bookData => {book: updatedBook}  */
 
 router.put("/:isbn", async function (req, res, next) {
   try {
-    const book = await Book.update(req.params.isbn, req.body);
-    return res.json({ book });
-  } catch (err) {
-    return next(err);
+    const validation = validate(req.body, bookSchema)
+    if (!validation.valid) {
+      return next({status: 400, errors: validation.errors.map(e => e.stack)})
+    }
+    const book = await Book.update(req.params.isbn, req.body)
+    return res.json({book})
   }
-});
+  catch (e) {
+    return next(e)
+  }
+})
 
 /** DELETE /[isbn]   => {message: "Book deleted"} */
 
 router.delete("/:isbn", async function (req, res, next) {
   try {
     await Book.remove(req.params.isbn);
-    return res.json({ message: "Book deleted" });
-  } catch (err) {
-    return next(err);
+    return res.json({ message: "Book deleted" })
+  } catch (e) {
+    return next(e)
   }
-});
+})
 
-module.exports = router;
+module.exports = router
